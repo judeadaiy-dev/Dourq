@@ -2,8 +2,10 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
+import { ArrowLeft, HeartHandshake, Lightbulb, Scale, Sparkles, UsersRound } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
+import InstallAppButton from '@/components/InstallAppButton';
 
 const steps = [
   { number: '01', title: 'نشارك الأفكار', text: 'نستمع لبعضنا ونختار الأفكار التي تستحق أن تتحول إلى شيء حقيقي.' },
@@ -12,9 +14,9 @@ const steps = [
 ];
 
 const values = [
-  { icon: '✳', title: 'فريق واحد', text: 'نتعاون ونتشارك المعرفة، فكل مهارة تضيف شيئًا للمشروع.' },
-  { icon: '↗', title: 'تقدير للجهد', text: 'نؤمن أن تقدير المساهمة يكون بوضوح وعدل، بحسب الجهد والمهمة.' },
-  { icon: '♡', title: 'بداية بسيطة', text: 'نتعلّم ونجرّب معًا، دون مدفوعات مسبقة أو تعقيدات في هذه المرحلة.' },
+  { icon: UsersRound, title: 'فريق واحد', text: 'نتعاون ونتشارك المعرفة، فكل مهارة تضيف شيئًا للمشروع.' },
+  { icon: Scale, title: 'تقدير للجهد', text: 'نؤمن أن تقدير المساهمة يكون بوضوح وعدل، بحسب الجهد والمهمة.' },
+  { icon: HeartHandshake, title: 'بداية بسيطة', text: 'نتعلّم ونجرّب معًا، دون مدفوعات مسبقة أو تعقيدات في هذه المرحلة.' },
 ];
 
 export default function Home() {
@@ -43,9 +45,15 @@ export default function Home() {
           <a className="transition hover:text-coral" href="#how">كيف نعمل</a>
           <a className="transition hover:text-coral" href="#join">هل يناسبك؟</a>
         </nav>
-        <Link href="/login" className="rounded-xl border border-[#5b4631]/15 bg-white/70 px-4 py-2.5 text-sm font-bold text-[#51483d] transition hover:border-coral hover:text-coral">
-          تسجيل الدخول
-        </Link>
+        <div className="flex items-center gap-2">
+          <InstallAppButton compact />
+          <Link href="/login" className="rounded-xl border border-[#5b4631]/15 bg-white/70 px-3 py-2.5 text-sm font-bold text-[#51483d] transition hover:border-coral hover:text-coral sm:px-4">
+            تسجيل الدخول
+          </Link>
+          <Link href="/signup" className="rounded-xl bg-coral px-3 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-[#824a30] sm:px-4">
+            انضم إلينا
+          </Link>
+        </div>
       </header>
 
       <section className="relative mx-auto grid max-w-7xl items-center gap-12 px-5 pb-20 pt-10 sm:px-8 sm:pb-28 sm:pt-16 lg:grid-cols-[1.05fr_.95fr] lg:gap-16 lg:px-12 lg:pb-32 lg:pt-20">
@@ -66,14 +74,14 @@ export default function Home() {
           <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
             <Link href="/signup" className="inline-flex items-center justify-center gap-3 rounded-xl bg-coral px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-coral/25 transition hover:-translate-y-0.5 hover:bg-[#824a30]">
               انضم إلينا وابدأ الآن
-              <span aria-hidden="true">←</span>
+              <ArrowLeft size={16} aria-hidden="true" />
             </Link>
             <a href="#about" className="inline-flex items-center justify-center rounded-xl border border-[#5b4631]/15 bg-white/65 px-6 py-3.5 text-sm font-bold text-[#51483d] transition hover:border-coral/50 hover:bg-white">
               تعرّف على الفريق
             </a>
           </div>
           <div className="mt-8 flex items-center gap-3 text-xs leading-6 text-slate-400">
-            <span aria-hidden="true" className="flex h-7 w-7 items-center justify-center rounded-full bg-[#e9e1d5] text-coral">✳</span>
+            <span aria-hidden="true" className="flex h-7 w-7 items-center justify-center rounded-full bg-[#e9e1d5] text-coral"><Sparkles size={15} /></span>
             مساحة للتعلّم والعمل المشترك — والبداية لا تحتاج إلى رأس مال.
           </div>
         </div>
@@ -89,7 +97,7 @@ export default function Home() {
               <span className="rounded-full bg-emerald-100/70 px-3 py-1.5 text-[11px] font-bold text-emerald-700">نعمل عليها</span>
             </div>
             <div className="my-6 rounded-2xl bg-[#f5f0e8] p-5 sm:p-6">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-2xl text-coral shadow-sm">✦</div>
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-coral shadow-sm"><Lightbulb size={22} strokeWidth={1.8} /></div>
               <p className="display mt-5 text-xl font-bold leading-9 text-[#352f28]">من فكرة صغيرة، إلى مشروع يصنع فرقًا.</p>
               <p className="mt-2 text-sm leading-7 text-slate-500">كل خطوة تبدأ بسؤال، وكل إجابة تقرّبنا من الحل.</p>
             </div>
@@ -107,14 +115,10 @@ export default function Home() {
               ))}
             </div>
             <div className="mt-5 flex items-center justify-between border-t border-[#5b4631]/10 pt-5">
-              <span className="text-xs font-semibold text-slate-400">فريق ساليكس</span>
-              <span className="text-sm font-bold text-coral">معًا نصنعها</span>
+                <span className="text-xs font-semibold text-slate-400">فريق ساليكس</span>
+                <span className="text-sm font-bold text-coral">معًا نصنعها</span>
+              </div>
             </div>
-          </div>
-          <div className="absolute -bottom-5 -left-3 hidden rounded-2xl border border-[#5b4631]/10 bg-white px-4 py-3 shadow-lg sm:block">
-            <p className="text-xs font-bold text-[#51483d]">فكرة + فريق</p>
-            <p className="mt-1 text-[11px] text-slate-400">بداية كل إنجاز</p>
-          </div>
         </div>
       </section>
 
@@ -130,7 +134,7 @@ export default function Home() {
           <div className="mt-12 grid gap-4 md:grid-cols-3">
             {values.map((value) => (
               <article key={value.title} className="rise rounded-2xl border border-[#5b4631]/10 bg-white/80 p-6 sm:p-7">
-                <span aria-hidden="true" className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#f4ece2] text-xl font-bold text-coral">{value.icon}</span>
+                <span aria-hidden="true" className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#f4ece2] text-coral"><value.icon size={20} strokeWidth={1.8} /></span>
                 <h3 className="display mt-5 text-lg font-bold text-[#352f28]">{value.title}</h3>
                 <p className="mt-2 text-sm leading-7 text-slate-500">{value.text}</p>
               </article>
@@ -163,20 +167,20 @@ export default function Home() {
       </section>
 
       <section id="join" className="scroll-mt-8 px-5 pb-20 sm:px-8 sm:pb-24 lg:px-12">
-        <div className="relative mx-auto max-w-7xl overflow-hidden rounded-[1.75rem] bg-[#352f28] px-6 py-12 text-center sm:px-12 sm:py-16">
+        <div className="cta-card relative mx-auto max-w-7xl select-none overflow-hidden rounded-[1.75rem] bg-[#352f28] px-6 py-14 text-center sm:px-12 sm:py-20 lg:px-16 lg:py-24">
           <div className="pointer-events-none absolute -left-16 -top-32 h-72 w-72 rounded-full bg-coral/30 blur-[90px]" />
           <div className="pointer-events-none absolute -bottom-44 -right-10 h-80 w-80 rounded-full bg-amberx/20 blur-[100px]" />
-          <div className="relative">
-            <p className="text-xs font-bold text-[#dfb89b]">هل هذه المنصة تناسبك؟</p>
-            <h2 className="display mx-auto mt-3 max-w-2xl text-3xl font-extrabold leading-relaxed text-white sm:text-4xl">لديك وقت أو خبرة أو فكرة؟ مكانك بيننا.</h2>
-            <p className="mx-auto mt-4 max-w-2xl text-sm leading-8 text-white/70 sm:text-base">
+          <div className="relative z-10 mx-auto max-w-4xl">
+            <p className="text-sm font-bold text-white/90">هل هذه المنصة تناسبك؟</p>
+            <h2 className="display mx-auto mt-4 max-w-3xl text-3xl font-extrabold leading-[1.7] !text-white sm:text-4xl sm:leading-[1.6]">لديك وقت أو خبرة أو فكرة؟ مكانك بيننا.</h2>
+            <p className="mx-auto mt-5 max-w-2xl text-base font-medium leading-8 !text-white/90 sm:text-lg sm:leading-9">
               إذا كنت تتطلع للتعلّم والعمل الجماعي وتحويل الأفكار إلى واقع، شاركنا مهاراتك وانضم إلى فريقنا. نتعارف أولًا، ونكتشف معًا ما يمكننا صنعه.
             </p>
-            <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-              <Link href="/signup" className="inline-flex items-center justify-center gap-3 rounded-xl bg-coral px-6 py-3.5 text-sm font-bold text-white transition hover:bg-[#824a30]">
-                انضم إلى الفريق <span aria-hidden="true">←</span>
+            <div className="mt-9 flex flex-col items-stretch justify-center gap-3 sm:mt-10 sm:flex-row sm:items-center">
+              <Link href="/signup" className="cta-button inline-flex min-h-12 items-center justify-center gap-3 rounded-xl bg-coral px-7 py-4 text-base font-extrabold text-white shadow-lg shadow-black/20 transition hover:-translate-y-0.5 hover:bg-[#824a30]">
+                انضم إلى الفريق <ArrowLeft size={16} aria-hidden="true" />
               </Link>
-              <Link href="/login" className="inline-flex items-center justify-center rounded-xl border border-white/20 px-6 py-3.5 text-sm font-bold text-white transition hover:bg-white/10">
+              <Link href="/login" className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/40 px-7 py-4 text-base font-bold !text-white transition hover:border-white/70 hover:bg-white/10">
                 لدي حساب بالفعل
               </Link>
             </div>

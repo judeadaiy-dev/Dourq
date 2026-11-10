@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
+import { Pause, Play } from 'lucide-react';
 
 export default function VoiceMessage({ src, waveform }: { src: string; waveform?: number[] }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -77,7 +78,7 @@ export default function VoiceMessage({ src, waveform }: { src: string; waveform?
         disabled={failed}
         className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-coral text-sm text-white shadow-md shadow-coral/20 transition hover:bg-[#824a30] disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {playing ? 'Ⅱ' : '▶'}
+        {playing ? <Pause size={15} /> : <Play size={15} />}
       </button>
       <div className="min-w-0 flex-1">
         <button

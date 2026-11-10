@@ -103,7 +103,7 @@ export default function TasksPage() {
             <Input dir="auto" className="mt-0" placeholder="عنوان المهمة" value={title} required maxLength={160} onChange={(event) => setTitle(event.target.value)} />
             <select aria-label="المسؤول عن المهمة" value={assignedTo} onChange={(event) => setAssignedTo(event.target.value)} className="rounded-xl border border-white/10 bg-[#fffdfa] px-4 py-3 text-sm text-[#352f28] outline-none focus:border-coral">
               <option value="">اختر المسؤول (اختياري)</option>
-              {[...people.values()].filter((person) => person.approved || person.is_owner).map((person) => <option key={person.id} value={person.id}>{person.display_name}{person.specialty ? ` · ${person.specialty}` : ''}</option>)}
+              {[...people.values()].filter((person) => (person.is_approved && !person.is_rejected) || person.is_owner).map((person) => <option key={person.id} value={person.id}>{person.display_name}{person.specialty ? ` · ${person.specialty}` : ''}</option>)}
             </select>
             <Textarea dir="auto" rows={2} placeholder="التفاصيل (اختياري)" value={body} onChange={(event) => setBody(event.target.value)} className="mt-0 md:col-span-2" />
             <label className="text-xs font-semibold text-slate-500">الأولوية

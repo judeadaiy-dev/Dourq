@@ -1,5 +1,6 @@
 'use client';
 import { useRef, useState } from 'react';
+import { Pause, Play, Volume2, VolumeX } from 'lucide-react';
 
 export default function VideoMessage({ src, filename }: { src: string; filename?: string | null }) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -57,13 +58,13 @@ export default function VideoMessage({ src, filename }: { src: string; filename?
             onClick={(event) => { event.stopPropagation(); void togglePlayback(); }}
             aria-label="تشغيل الفيديو"
             className="absolute left-1/2 top-1/2 flex h-14 w-14 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-black/45 text-xl text-white shadow-xl backdrop-blur-sm transition hover:scale-105 hover:bg-coral"
-          >▶</button>
+          ><Play size={22} fill="currentColor" /></button>
         )}
         {failed && <p role="status" className="absolute inset-x-4 top-1/2 -translate-y-1/2 text-center text-sm text-white">تعذر تشغيل هذا الفيديو</p>}
       </div>
       <div dir="ltr" className="flex items-center gap-2.5 px-1 py-2.5 text-[#51483d]">
         <button type="button" onClick={() => void togglePlayback()} disabled={failed} aria-label={playing ? 'إيقاف الفيديو' : 'تشغيل الفيديو'} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm transition hover:bg-[#5b4631]/10 disabled:opacity-50">
-          {playing ? 'Ⅱ' : '▶'}
+          {playing ? <Pause size={16} /> : <Play size={16} />}
         </button>
         <span className="shrink-0 text-[10px] tabular-nums text-slate-500">{formatTime(current)}</span>
         <button
@@ -90,7 +91,7 @@ export default function VideoMessage({ src, filename }: { src: string; filename?
         </button>
         <span className="shrink-0 text-[10px] tabular-nums text-slate-500">{formatTime(duration)}</span>
         <button type="button" onClick={() => setMuted((value) => !value)} aria-label={muted ? 'تشغيل الصوت' : 'كتم الصوت'} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm text-[#51483d] transition hover:bg-[#5b4631]/10">
-          {muted ? '◖×' : '◖'}
+          {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
         </button>
       </div>
       {filename && <figcaption dir="auto" className="truncate px-1 text-xs text-slate-500">{filename}</figcaption>}

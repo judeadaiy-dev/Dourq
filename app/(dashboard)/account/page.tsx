@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { FileText } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
@@ -257,7 +258,7 @@ export default function AccountPage() {
           <p className="mt-1 text-xs text-slate-500">ارفع ملف PDF ليتمكن أعضاء الفريق من الاطلاع عليه وتنزيله.</p>
           {resumeUrl && !removeResume && !resumeFile && (
             <a href={resumeUrl} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex items-center gap-2 rounded-xl border border-coral/20 bg-coral/5 px-4 py-3 text-sm font-semibold text-coral">
-              📄 عرض السيرة الذاتية الحالية
+              <FileText size={17} />عرض السيرة الذاتية الحالية
             </a>
           )}
           {resumeFile && <p className="mt-4 text-sm text-slate-500">الملف الجديد: {resumeFile.name}</p>}

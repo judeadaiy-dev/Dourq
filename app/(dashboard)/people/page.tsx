@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { usePresence } from '@/lib/presence';
 import { useAuth } from '@/lib/auth';
-import { Avatar, Badge, Button, Card, Eyebrow } from '@/components/ui/ui';
+import { Avatar, Badge, Card, Eyebrow } from '@/components/ui/ui';
 import { SPECIALTIES, specialtyLabel, Profile } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
@@ -29,7 +29,6 @@ function ResumeLink({ path }: { path: string }) {
 
 export default function PeoplePage() {
   const [people, setPeople] = useState<Profile[]>([]);
-  const [pending, setPending] = useState<Profile[]>([]);
   const [filter, setFilter] = useState<string>('all');
   const [search, setSearch] = useState('');
   const [activeTaskCounts, setActiveTaskCounts] = useState<Map<string, number>>(new Map());
@@ -40,13 +39,12 @@ export default function PeoplePage() {
     if (!profile) return;
     const load = async () => {
       const [profilesResult, tasksResult] = await Promise.all([
-        supabase.from('th_profiles').select('*').eq('onboarded', true).order('created_at'),
+        supabase.from('th_profiles').select('*').order('created_at'),
         supabase.from('th_tasks').select('assigned_to').neq('status', 'done').not('assigned_to', 'is', null)
       ]);
       if (profilesResult.error || tasksResult.error) setDirectoryError('تعذر تحميل بيانات الفريق كاملة. حدّث الصفحة أو تحقق من مخطط قاعدة البيانات.');
       const profiles = (profilesResult.data ?? []) as Profile[];
-      setPeople(profiles.filter((person) => person.approved !== false));
-      setPending(profile.is_owner ? profiles.filter((person) => person.approved === false) : []);
+      setPeople(profiles.filter((person) => person.is_approved && !person.is_rejected));
       const counts = new Map<string, number>();
       for (const task of tasksResult.data ?? []) {
         if (task.assigned_to) counts.set(task.assigned_to, (counts.get(task.assigned_to) ?? 0) + 1);
@@ -58,20 +56,12 @@ export default function PeoplePage() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'th_tasks' }, () => { void load(); })
       .subscribe();
     return () => { void supabase.removeChannel(channel); };
-  }, [profile?.id, profile?.is_owner]);
+  }, [profile?.id]);
   const shown = people.filter((person) => {
     const matchesSpecialty = filter === 'all' || person.specialty === filter;
     const haystack = [person.display_name, person.job_title, person.bio, specialtyLabel(person.specialty)].join(' ').toLocaleLowerCase();
     return matchesSpecialty && haystack.includes(search.trim().toLocaleLowerCase());
   });
-
-  async function approveMember(member: Profile) {
-    const { error } = await supabase.rpc('th_approve_member', { p_profile_id: member.id });
-    if (error) { setDirectoryError(`تعذرت الموافقة على العضو: ${error.message}`); return; }
-    setDirectoryError('');
-    setPending((current) => current.filter((person) => person.id !== member.id));
-    setPeople((current) => [...current, { ...member, approved: true }]);
-  }
 
   return (
     <div>
@@ -81,7 +71,6 @@ export default function PeoplePage() {
         <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="مثال: تصميم، أحمد، واجهات…" className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-normal text-white outline-none focus:border-coral" />
       </label>
       {directoryError && <p role="status" className="mt-4 text-sm text-red-400">{directoryError}</p>}
-      {profile?.is_owner && pending.length > 0 && <section className="mt-8 border-b border-white/10 pb-6"><h2 className="text-lg font-bold">طلبات الانضمام</h2><div className="mt-3 space-y-2">{pending.map((member) => <div key={member.id} className="flex items-center gap-3 rounded-xl bg-white/5 p-3"><Avatar name={member.display_name} url={member.avatar_url} size={36} /><span className="min-w-0 flex-1 truncate text-sm">{member.display_name}</span><Button onClick={() => void approveMember(member)} className="px-4 py-2">موافقة</Button></div>)}</div></section>}
       <div className="mt-8 flex flex-wrap gap-2">
         {[{ id: 'all', label: 'الكل' }, ...SPECIALTIES].map((s) => (
           <button key={s.id} onClick={() => setFilter(s.id)} className={cn('rounded-xl border px-4 py-2.5 text-sm transition', filter === s.id ? 'border-coral/30 bg-coral/10 text-amber-100' : 'border-white/10 bg-white/5 text-slate-300 hover:border-white/25')}>{s.label}</button>

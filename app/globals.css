@@ -9,6 +9,17 @@ body { font-family: 'IBM Plex Sans Arabic', sans-serif; color: #352f28; -webkit-
 .glass { background: rgba(255,255,255,.88); border: 1px solid rgba(91,70,49,.12); backdrop-filter: blur(18px); }
 .grid-bg { background-color: #f8f6f1; background-image: linear-gradient(rgba(151,91,59,.045) 1px, transparent 1px), linear-gradient(90deg, rgba(151,91,59,.045) 1px, transparent 1px); background-size: 54px 54px; }
 .coral-glow { box-shadow: 0 12px 44px rgba(91,70,49,.1); }
+.cta-card { border: 1px solid rgba(255,255,255,.14); box-shadow: 0 18px 56px rgba(53,47,40,.12), 0 0 32px rgba(151,91,59,.06); transition: box-shadow .3s ease, border-color .3s ease; }
+.cta-card:hover { border-color: rgba(255,255,255,.2); box-shadow: 0 22px 64px rgba(53,47,40,.16), 0 0 40px rgba(151,91,59,.09); }
+.cta-button { animation: cta-glow 3.2s ease-in-out infinite; }
+.cta-button:hover, .cta-button:focus-visible { animation-play-state: paused; }
+@keyframes cta-glow {
+  0%, 100% { box-shadow: 0 10px 24px rgba(0,0,0,.2), 0 0 0 0 rgba(151,91,59,0); }
+  50% { box-shadow: 0 12px 28px rgba(0,0,0,.22), 0 0 0 4px rgba(151,91,59,.12); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cta-card, .cta-button { transition: none; animation: none; }
+}
 .rise { transition: transform .35s ease, box-shadow .35s ease, border-color .35s ease; }
 .rise:hover { transform: translateY(-3px); box-shadow: 0 20px 48px rgba(91,70,49,.12); border-color: rgba(151,91,59,.3); }
 .scroll-thin { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.2) transparent; }

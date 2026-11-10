@@ -1,12 +1,13 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { Download, X } from 'lucide-react';
 
 interface InstallPromptEvent extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
 }
 
-export default function InstallAppButton() {
+export default function InstallAppButton({ compact = false }: { compact?: boolean }) {
   const [installPrompt, setInstallPrompt] = useState<InstallPromptEvent | null>(null);
   const [installed, setInstalled] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
@@ -28,6 +29,11 @@ export default function InstallAppButton() {
     };
 
     updateInstalled();
+    if ('serviceWorker' in navigator) {
+      void navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch((error: unknown) => {
+        console.error('Failed to register TeamHub service worker:', error);
+      });
+    }
     window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt);
     window.addEventListener('appinstalled', onAppInstalled);
     displayMode.addEventListener('change', updateInstalled);
@@ -62,11 +68,12 @@ export default function InstallAppButton() {
       <button
         type="button"
         onClick={() => void installApp()}
-        className="flex shrink-0 items-center gap-2 rounded-xl border border-coral/25 bg-coral/10 px-3 py-2 text-xs font-semibold text-amber-100 transition hover:bg-coral/15"
+        aria-label="تثبيت تطبيق TeamHub"
+        title="تثبيت تطبيق TeamHub"
+        className={`flex shrink-0 items-center gap-2 rounded-xl border border-coral/25 bg-coral/10 py-2 text-xs font-semibold text-coral transition hover:bg-coral/15 ${compact ? 'px-2.5' : 'px-3'}`}
       >
-        <span aria-hidden="true">⬇</span>
-        <span className="hidden sm:inline">تثبيت التطبيق</span>
-        <span className="sm:hidden">تثبيت</span>
+        <Download size={15} strokeWidth={1.8} />
+        {!compact && <><span className="hidden sm:inline">تثبيت التطبيق</span><span className="sm:hidden">تثبيت</span></>}
       </button>
       {showInstructions && (
         <div
@@ -81,7 +88,10 @@ export default function InstallAppButton() {
             aria-labelledby="install-app-title"
             className="w-full max-w-sm rounded-2xl border border-white/15 bg-[#F8F6F1] p-6 text-slate-800 shadow-2xl"
           >
-            <h2 id="install-app-title" className="display text-lg font-bold">تثبيت TeamHub</h2>
+            <div className="flex items-center justify-between gap-4">
+              <h2 id="install-app-title" className="display text-lg font-bold">تثبيت TeamHub</h2>
+              <button type="button" onClick={() => setShowInstructions(false)} aria-label="إغلاق" className="rounded-full p-1.5 text-slate-500 transition hover:bg-black/5 hover:text-[#352f28]"><X size={17} /></button>
+            </div>
             <p className="mt-3 text-sm leading-7 text-slate-600">
               {promptError && 'لم يفتح خيار التثبيت تلقائيًا. '}
               {/iphone|ipad|ipod/i.test(navigator.userAgent)

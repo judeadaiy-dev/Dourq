@@ -19,7 +19,7 @@ export function PresenceProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!profile) return;
-    if (profile.approved === false && !profile.is_owner) { setOnline([]); return; }
+    if ((!profile.is_approved || profile.is_rejected) && !profile.is_owner) { setOnline([]); return; }
     const channel = supabase.channel('site-presence', { config: { presence: { key: profile.id } } });
     channel.on('presence', { event: 'sync' }, () => {
       const st = channel.presenceState<Online>();
@@ -29,11 +29,11 @@ export function PresenceProvider({ children }: { children: ReactNode }) {
     });
     ch.current = channel;
     return () => { supabase.removeChannel(channel); ch.current = null; };
-  }, [profile?.id, profile?.approved, profile?.is_owner]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [profile?.id, profile?.is_approved, profile?.is_rejected, profile?.is_owner]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (profile && profile.approved !== false || profile?.is_owner) ch.current?.track({ id: profile.id, name: profile.display_name, avatar: profile.avatar_url, path: pathname });
-  }, [pathname, profile?.id, profile?.approved, profile?.is_owner]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (profile && (profile.is_approved && !profile.is_rejected || profile.is_owner)) ch.current?.track({ id: profile.id, name: profile.display_name, avatar: profile.avatar_url, path: pathname });
+  }, [pathname, profile?.id, profile?.is_approved, profile?.is_rejected, profile?.is_owner]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return <PresenceCtx.Provider value={online}>{children}</PresenceCtx.Provider>;
 }

@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#352f28">
+    <title>TeamHub — غير متصل</title>
+    <style>
+      * { box-sizing: border-box; }
+      body { display: grid; min-height: 100vh; margin: 0; padding: 24px; place-items: center; background: #f8f6f1; color: #352f28; font-family: system-ui, sans-serif; text-align: center; }
+      main { width: min(100%, 420px); padding: 36px 28px; border: 1px solid #e8dfd3; border-radius: 24px; background: #fffdfa; box-shadow: 0 16px 48px #352f2812; }
+      img { width: 76px; height: 76px; }
+      h1 { margin: 20px 0 8px; font-size: 1.4rem; }
+      p { margin: 0; color: #756a5e; line-height: 1.9; }
+      button { margin-top: 24px; padding: 11px 22px; border: 0; border-radius: 12px; background: #975b3b; color: white; font: inherit; font-weight: 700; cursor: pointer; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <img src="/icon.svg" alt="">
+      <h1>أنت غير متصل بالإنترنت</h1>
+      <p>تحتاج TeamHub إلى اتصال بالإنترنت لمزامنة محادثات الفريق وبياناته. أعد الاتصال ثم حاول مجددًا.</p>
+      <button type="button" onclick="location.reload()">إعادة المحاولة</button>
+    </main>
+  </body>
+</html>

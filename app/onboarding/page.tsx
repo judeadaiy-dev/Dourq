@@ -20,6 +20,7 @@ export default function Onboarding() {
   useEffect(() => {
     if (loading) return;
     if (!user) router.replace('/login');
+    else if (profile && (!profile.is_approved || profile.is_rejected) && !profile.is_owner) router.replace('/pending');
     else if (profile?.onboarded) router.replace('/workspace');
   }, [loading, user, profile, router]);
   useEffect(() => { if (profile) { setName(profile.display_name); setSpec(profile.specialty); setBio(profile.bio ?? ''); } }, [profile?.id]); // eslint-disable-line react-hooks/exhaustive-deps

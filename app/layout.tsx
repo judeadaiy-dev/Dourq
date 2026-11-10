@@ -1,8 +1,20 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { AuthProvider } from '@/lib/auth';
 
-export const metadata: Metadata = { title: 'TeamHub — مساحة عمل الفريق', description: 'مساحة موحدة لمحادثات الفريق ومهامه وتواجده.' };
+export const metadata: Metadata = {
+  title: 'TeamHub — مساحة عمل الفريق',
+  description: 'مساحة موحدة لمحادثات الفريق ومهامه وتواجده.',
+  manifest: '/manifest.webmanifest',
+  icons: { icon: '/icon.svg', apple: '/icon-192.png' },
+  appleWebApp: { capable: true, statusBarStyle: 'default', title: 'TeamHub' }
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  themeColor: '#352f28'
+};
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { FileText, Pin } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import { Avatar, Badge, Button, Card, Input } from '@/components/ui/ui';
@@ -31,7 +32,7 @@ function AttachmentLink({ attachment }: { attachment: TaskAttachment }) {
 
   if (error) return <span className="text-xs text-red-400">تعذر فتح {attachment.file_name}</span>;
   if (!url) return <span className="text-xs text-slate-500">جارٍ تجهيز {attachment.file_name}…</span>;
-  return <a href={url} target="_blank" rel="noopener noreferrer" className="max-w-full truncate text-xs font-semibold text-coral hover:underline">📎 {attachment.file_name}</a>;
+  return <a href={url} target="_blank" rel="noopener noreferrer" className="flex max-w-full items-center gap-1 truncate text-xs font-semibold text-coral hover:underline"><FileText size={14} className="shrink-0" />{attachment.file_name}</a>;
 }
 
 export default function TaskCard({
@@ -155,7 +156,7 @@ export default function TaskCard({
     <Card className={cn('overflow-hidden', task.pinned && 'border-coral/40 coral-glow')}>
       <div className="p-5 sm:p-6">
         <div className="flex flex-wrap items-center gap-2">
-          {task.pinned && <Badge>📌 مثبتة</Badge>}
+          {task.pinned && <Badge className="inline-flex items-center gap-1"><Pin size={12} />مثبتة</Badge>}
           <Badge className={statusColor[task.status]}>{STATUSES.find((item) => item.id === task.status)?.label}</Badge>
           <span className={`text-xs font-semibold ${priorityColor[task.priority ?? 'medium']}`}>● أولوية {PRIORITIES[task.priority ?? 'medium']}</span>
           <span className="ms-auto text-xs text-slate-500">{timeAgo(task.created_at)}</span>
@@ -177,7 +178,7 @@ export default function TaskCard({
               إسناد
               <select aria-label="إسناد المهمة" value={task.assigned_to ?? ''} onChange={(event) => void run(supabase.from('th_tasks').update({ assigned_to: event.target.value || null }).eq('id', task.id))} className="ms-2 max-w-32 bg-transparent text-[#352f28] outline-none">
                 <option value="">غير مسندة</option>
-                {[...people.values()].filter((person) => person.approved || person.is_owner).map((person) => <option key={person.id} value={person.id}>{person.display_name}</option>)}
+                {[...people.values()].filter((person) => (person.is_approved && !person.is_rejected) || person.is_owner).map((person) => <option key={person.id} value={person.id}>{person.display_name}</option>)}
               </select>
             </label>}
             {owner && <button type="button" onClick={() => void run(supabase.from('th_tasks').update({ pinned: !task.pinned }).eq('id', task.id))} className="rounded-lg border border-white/10 px-3 py-1.5 hover:border-coral/50">{task.pinned ? 'إلغاء التثبيت' : 'تثبيت'}</button>}
@@ -209,7 +210,7 @@ export default function TaskCard({
             })}
           </div>
           <form onSubmit={(event) => void reply(event)} className="mt-3 space-y-2">
-            <MentionTextarea value={text} onChange={setText} people={[...people.values()].filter((person) => person.approved || person.is_owner)} mentionIds={mentions} onMentionIdsChange={setMentions} rows={2} placeholder="اكتب تعليقًا… اكتب @ للإشارة إلى عضو" />
+            <MentionTextarea value={text} onChange={setText} people={[...people.values()].filter((person) => (person.is_approved && !person.is_rejected) || person.is_owner)} mentionIds={mentions} onMentionIdsChange={setMentions} rows={2} placeholder="اكتب تعليقًا… اكتب @ للإشارة إلى عضو" />
             <div className="flex justify-end"><Button type="submit" disabled={!text.trim()}>إضافة تعليق</Button></div>
           </form>
         </section>

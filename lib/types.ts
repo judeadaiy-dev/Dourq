@@ -25,7 +25,8 @@ export interface Profile {
   linkedin_url?: string | null;
   github_url?: string | null;
   is_owner: boolean;
-  approved: boolean;
+  is_approved: boolean;
+  is_rejected: boolean;
   onboarded: boolean;
   created_at: string;
 }
@@ -42,14 +43,16 @@ export interface Message {
   mentions?: string[];
   reply_to_id?: number | null;
   pinned?: boolean;
+  delivery_state?: 'pending' | 'failed';
   created_at: string;
 }
 export interface MessageReaction { message_id: number; user_id: string; emoji: string }
+export interface MessageRead { message_id: number; user_id: string; read_at: string }
 export type TaskStatus = 'open' | 'in_progress' | 'review' | 'done';
 export type TaskPriority = 'low' | 'medium' | 'high';
 export interface Task { id: number; author_id: string; title: string; body: string | null; status: TaskStatus; assigned_to?: string | null; due_date?: string | null; priority?: TaskPriority; pinned: boolean; created_at: string }
 export interface Reply { id: number; task_id: number; author_id: string; body: string; mentions?: string[]; created_at: string }
 export interface TaskAttachment { id: number; task_id: number; uploaded_by: string; storage_path: string; file_name: string; mime_type: string; created_at: string }
-export interface ChatChannel { id: string; name: string; description: string | null; created_at: string }
+export interface ChatChannel { id: string; name: string; description: string | null; created_by: string | null; created_at: string }
 export interface TeamNotification { id: number; user_id: string; actor_id: string | null; kind: string; body: string; task_id: number | null; message_id: number | null; channel_id: string | null; created_at: string; read_at: string | null }
 export interface Online { id: string; name: string; avatar: string | null; path: string }

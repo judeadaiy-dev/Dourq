@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { AtSign, Bell, CheckCheck, CircleAlert, ClipboardCheck, ListTodo, MessageCircle, RefreshCw, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
@@ -110,26 +111,29 @@ export default function NotificationCenter() {
   }
 
   function notificationIcon(kind: string) {
-    if (kind === 'task_assigned') return '📌';
-    if (kind === 'task_status') return '🔄';
-    if (kind === 'mention_chat') return '💬';
-    if (kind === 'mention_task') return '✦';
-    return '🔔';
+    if (kind === 'task_assigned') return <ClipboardCheck size={17} strokeWidth={1.8} />;
+    if (kind === 'task_status') return <RefreshCw size={17} strokeWidth={1.8} />;
+    if (kind === 'mention_chat') return <MessageCircle size={17} strokeWidth={1.8} />;
+    if (kind === 'mention_task') return <AtSign size={17} strokeWidth={1.8} />;
+    return <Bell size={17} strokeWidth={1.8} />;
   }
 
   return (
     <div className="relative">
       <button type="button" aria-label={`الإشعارات${unread ? `، ${unread} غير مقروءة` : ''}`} aria-expanded={open} onClick={() => setOpen((value) => !value)} className="relative flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/50 text-lg text-slate-600 transition hover:border-coral/30 hover:bg-coral/5 hover:text-coral">
-        🔔
+        <Bell size={18} strokeWidth={1.8} />
         {unread > 0 && <span className="absolute -left-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-coral px-1 text-[10px] font-bold text-white">{unread > 9 ? '9+' : unread}</span>}
       </button>
       {open && <div className="absolute left-0 top-12 z-50 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-[#5b4631]/15 bg-[#fffdfa] shadow-2xl">
         <div className="flex items-center justify-between gap-3 border-b border-[#5b4631]/10 px-4 py-3">
           <div><h3 className="font-bold">الإشعارات</h3><span className="text-xs text-slate-500">{unread} غير مقروء</span></div>
-          <button type="button" onClick={() => void markAllRead()} disabled={unread === 0 || markingAll} className="rounded-lg px-2.5 py-2 text-[11px] font-semibold text-coral transition hover:bg-coral/5 disabled:cursor-default disabled:text-slate-400 disabled:hover:bg-transparent">{markingAll ? 'جارٍ التحديث…' : '✓ تحديد الكل كمقروء'}</button>
+          <div className="flex items-center gap-1">
+            <button type="button" onClick={() => void markAllRead()} disabled={unread === 0 || markingAll} className="inline-flex items-center gap-1 rounded-lg px-2.5 py-2 text-[11px] font-semibold text-coral transition hover:bg-coral/5 disabled:cursor-default disabled:text-slate-400 disabled:hover:bg-transparent">{markingAll ? <RefreshCw size={14} className="animate-spin" /> : <CheckCheck size={14} />}{markingAll ? 'جارٍ التحديث…' : 'تحديد الكل كمقروء'}</button>
+            <button type="button" onClick={() => setOpen(false)} aria-label="إغلاق الإشعارات" className="rounded-full p-2 text-slate-500 transition hover:bg-black/5 hover:text-[#352f28]"><X size={16} /></button>
+          </div>
         </div>
         {error && <div role="status" aria-live="polite" className="flex items-center gap-3 border-b border-[#5b4631]/10 bg-[#fbf4e8] px-4 py-3">
-          <span aria-hidden="true" className="text-sm">ⓘ</span>
+          <CircleAlert size={16} className="shrink-0 text-amber-800" />
           <p className="flex-1 text-xs leading-5 text-amber-900">{error}</p>
           <button type="button" onClick={() => setReloadKey((key) => key + 1)} className="shrink-0 rounded-lg bg-white px-2.5 py-1.5 text-xs font-semibold text-coral shadow-sm transition hover:bg-[#f8eadd]">إعادة المحاولة</button>
         </div>}
@@ -147,11 +151,11 @@ export default function NotificationCenter() {
           })}
           {loading && !notifications.length && <p className="px-4 py-8 text-center text-sm text-slate-500">جارٍ تحميل الإشعارات…</p>}
           {!loading && !notifications.length && !error && <div className="px-4 py-8 text-center">
-            <span aria-hidden="true" className="text-2xl">🔔</span>
+            <Bell size={22} strokeWidth={1.6} className="mx-auto text-slate-400" />
             <p className="mt-2 text-sm text-slate-500">لا توجد إشعارات بعد.</p>
           </div>}
         </div>
-        <Link href="/tasks" onClick={() => setOpen(false)} className="block border-t border-[#5b4631]/10 px-4 py-3 text-center text-xs font-semibold text-coral">عرض لوحة المهام</Link>
+        <Link href="/tasks" onClick={() => setOpen(false)} className="flex items-center justify-center gap-2 border-t border-[#5b4631]/10 px-4 py-3 text-center text-xs font-semibold text-coral"><ListTodo size={15} />عرض لوحة المهام</Link>
       </div>}
     </div>
   );

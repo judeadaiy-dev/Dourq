@@ -18,21 +18,31 @@ create table if not exists public.th_profiles (
   linkedin_url text check (linkedin_url is null or char_length(linkedin_url) <= 2048),
   github_url   text check (github_url is null or char_length(github_url) <= 2048),
   is_owner     boolean not null default false,
-  approved     boolean not null default false,
+  is_approved boolean not null default false,
+  is_rejected boolean not null default false,
   onboarded    boolean not null default false,
   created_at   timestamptz not null default now()
 );
 alter table public.th_profiles enable row level security;
 
 do $$ begin
-  if not exists (
+  if exists (
     select 1 from information_schema.columns
     where table_schema = 'public' and table_name = 'th_profiles' and column_name = 'approved'
+  ) and not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'th_profiles' and column_name = 'is_approved'
   ) then
-    alter table public.th_profiles add column approved boolean not null default false;
-    update public.th_profiles set approved = true where onboarded or is_owner;
+    alter table public.th_profiles rename column approved to is_approved;
+  elsif not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'th_profiles' and column_name = 'is_approved'
+  ) then
+    alter table public.th_profiles add column is_approved boolean not null default false;
   end if;
 end $$;
+alter table public.th_profiles add column if not exists is_rejected boolean not null default false;
+alter table public.th_profiles alter column is_approved set default false;
 alter table public.th_profiles drop constraint if exists th_profiles_specialty_check;
 alter table public.th_profiles add constraint th_profiles_specialty_check
   check (specialty is null or specialty in ('frontend','backend','fullstack','mobile','ui_ux','devops','ai','qa','content_writer'));
@@ -44,19 +54,28 @@ alter table public.th_profiles add column if not exists github_url text check (g
 
 create or replace function public.th_is_owner()
 returns boolean language sql stable security definer set search_path = public as $$
-  select coalesce((select is_owner from public.th_profiles where id = auth.uid()), false)
+  select coalesce((
+    select p.is_owner and lower(u.email) = 'bariqaday@gmail.com' and u.email_confirmed_at is not null
+    from public.th_profiles p
+    join auth.users u on u.id = p.id
+    where p.id = auth.uid()
+  ), false)
 $$;
 
 create or replace function public.th_is_member()
 returns boolean language sql stable security definer set search_path = public as $$
-  select coalesce((select approved or is_owner from public.th_profiles where id = auth.uid()), false)
+  select coalesce((select (is_approved and not is_rejected) or is_owner from public.th_profiles where id = auth.uid()), false)
 $$;
 revoke all on function public.th_is_member() from public, anon;
 grant execute on function public.th_is_member() to authenticated;
 
 drop policy if exists "th_profiles_select" on public.th_profiles;
 create policy "th_profiles_select" on public.th_profiles for select to authenticated
-  using (id = auth.uid() or approved or public.th_is_owner());
+  using (
+    id = auth.uid()
+    or public.th_is_owner()
+    or (public.th_is_member() and is_approved and not is_rejected)
+  );
 drop policy if exists "th_profiles_update_own" on public.th_profiles;
 create policy "th_profiles_update_own" on public.th_profiles for update to authenticated
   using (id = auth.uid()) with check (
@@ -76,10 +95,34 @@ create or replace function public.th_approve_member(p_profile_id uuid)
 returns void language plpgsql security definer set search_path = public as $$
 begin
   if not public.th_is_owner() then raise exception 'not authorized'; end if;
-  update public.th_profiles set approved = true where id = p_profile_id and is_owner = false;
+  update public.th_profiles set is_approved = true, is_rejected = false
+    where id = p_profile_id and is_owner = false and is_rejected = false;
+  if not found then raise exception 'pending member not found'; end if;
 end $$;
 revoke all on function public.th_approve_member(uuid) from public, anon;
 grant execute on function public.th_approve_member(uuid) to authenticated;
+
+create or replace function public.th_reject_member(p_profile_id uuid)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if not public.th_is_owner() then raise exception 'not authorized'; end if;
+  update public.th_profiles set is_approved = false, is_rejected = true
+    where id = p_profile_id and is_owner = false and is_approved = false and is_rejected = false;
+  if not found then raise exception 'member not found or cannot be rejected'; end if;
+end $$;
+revoke all on function public.th_reject_member(uuid) from public, anon;
+grant execute on function public.th_reject_member(uuid) to authenticated;
+
+create table if not exists public.th_join_requests (
+  profile_id uuid primary key references public.th_profiles(id) on delete cascade,
+  status text not null default 'pending' check (status in ('pending','sending','sent','failed')),
+  attempts integer not null default 0 check (attempts >= 0),
+  sent_at timestamptz,
+  updated_at timestamptz not null default now()
+);
+alter table public.th_join_requests enable row level security;
+revoke all on public.th_join_requests from public, anon, authenticated;
+grant all on public.th_join_requests to service_role;
 
 update public.th_profiles
 set avatar_url = regexp_replace(avatar_url, '^.*/object/public/th-avatars/([^?]*).*$','\1')
@@ -93,7 +136,7 @@ begin
   if auth.uid() is null then raise exception 'not authenticated'; end if;
   select lower(email) into owner_email from auth.users
     where id = auth.uid() and email_confirmed_at is not null;
-  insert into public.th_profiles (id, display_name, is_owner, approved)
+  insert into public.th_profiles (id, display_name, is_owner, is_approved)
     values (auth.uid(), coalesce(nullif(trim(p_name), ''), 'Member'),
       coalesce(owner_email = 'bariqaday@gmail.com', false),
       coalesce(owner_email = 'bariqaday@gmail.com', false))
@@ -107,29 +150,44 @@ create table if not exists public.th_channels (
   id text primary key check (id ~ '^[a-z0-9-]{1,40}$'),
   name text not null check (char_length(name) between 1 and 60),
   description text check (description is null or char_length(description) <= 200),
+  created_by uuid references public.th_profiles(id) on delete set null default auth.uid(),
   created_at timestamptz not null default now()
 );
-insert into public.th_channels (id, name, description) values
-  ('general', 'عام', 'الإعلانات والنقاشات العامة'),
-  ('design', 'تصميم', 'التصميم وتجربة المستخدم'),
-  ('development', 'برمجة', 'النقاشات التقنية والتطوير')
+alter table public.th_channels add column if not exists created_by uuid references public.th_profiles(id) on delete set null default auth.uid();
+insert into public.th_channels (id, name, description, created_by) values
+  ('general', 'عام', 'الإعلانات والنقاشات العامة', null),
+  ('design', 'تصميم', 'التصميم وتجربة المستخدم', null),
+  ('development', 'برمجة', 'النقاشات التقنية والتطوير', null)
 on conflict (id) do update set name = excluded.name, description = excluded.description;
 alter table public.th_channels enable row level security;
 drop policy if exists "th_channels_select" on public.th_channels;
 create policy "th_channels_select" on public.th_channels for select to authenticated using (public.th_is_member());
 drop policy if exists "th_channels_insert_owner" on public.th_channels;
-create policy "th_channels_insert_owner" on public.th_channels for insert to authenticated with check (public.th_is_owner() and public.th_is_member());
+drop policy if exists "th_channels_insert_member" on public.th_channels;
+create policy "th_channels_insert_member" on public.th_channels for insert to authenticated
+  with check (public.th_is_member() and created_by = auth.uid());
 drop policy if exists "th_channels_update_owner" on public.th_channels;
-create policy "th_channels_update_owner" on public.th_channels for update to authenticated using (public.th_is_owner()) with check (public.th_is_owner());
+drop policy if exists "th_channels_update_creator" on public.th_channels;
+create policy "th_channels_update_creator" on public.th_channels for update to authenticated
+  using (public.th_is_member() and created_by = auth.uid())
+  with check (public.th_is_member() and created_by = auth.uid());
+drop policy if exists "th_channels_delete_creator" on public.th_channels;
+create policy "th_channels_delete_creator" on public.th_channels for delete to authenticated
+  using (public.th_is_member() and created_by = auth.uid() and id not in ('general', 'design', 'development'));
 grant select on public.th_channels to authenticated;
 grant insert, update on public.th_channels to authenticated;
+grant delete on public.th_channels to authenticated;
 
 -- إذا كان الحساب موجوداً مسبقاً، انقل صلاحية المالك إليه عند إعادة تشغيل المخطط.
 do $$ begin
   update public.th_profiles set is_owner = false where is_owner;
-  update public.th_profiles p set is_owner = true, approved = true
+  update public.th_profiles p set is_owner = true, is_approved = true, is_rejected = false
     from auth.users u where p.id = u.id and lower(u.email) = 'bariqaday@gmail.com' and u.email_confirmed_at is not null;
 end $$;
+
+update public.th_channels
+set created_by = (select id from public.th_profiles where is_owner limit 1)
+where created_by is null and id not in ('general', 'design', 'development');
 
 -- 2) المحادثة
 create table if not exists public.th_messages (
@@ -152,7 +210,10 @@ alter table public.th_messages add column if not exists attachment_path text;
 alter table public.th_messages add column if not exists attachment_name text;
 alter table public.th_messages add column if not exists attachment_type text;
 alter table public.th_messages add column if not exists waveform jsonb not null default '[]'::jsonb;
-alter table public.th_messages add column if not exists channel_id text not null default 'general' references public.th_channels(id);
+alter table public.th_messages add column if not exists channel_id text not null default 'general';
+alter table public.th_messages drop constraint if exists th_messages_channel_id_fkey;
+alter table public.th_messages add constraint th_messages_channel_id_fkey
+  foreign key (channel_id) references public.th_channels(id) on delete cascade;
 alter table public.th_messages add column if not exists mentions uuid[] not null default '{}'::uuid[];
 alter table public.th_messages add column if not exists reply_to_id bigint references public.th_messages(id) on delete set null;
 alter table public.th_messages add column if not exists pinned boolean not null default false;
@@ -167,10 +228,53 @@ create policy "th_messages_select" on public.th_messages for select to authentic
 drop policy if exists "th_messages_insert" on public.th_messages;
 create policy "th_messages_insert" on public.th_messages for insert to authenticated
   with check (public.th_is_member() and user_id = auth.uid() and image_url is null and
+    created_at <= now() and
     (attachment_path is null or (storage.foldername(attachment_path))[1] = auth.uid()::text));
 drop policy if exists "th_messages_delete" on public.th_messages;
 create policy "th_messages_delete" on public.th_messages for delete to authenticated
   using (public.th_is_member() and (user_id = auth.uid() or public.th_is_owner()));
+drop policy if exists "th_messages_update_own" on public.th_messages;
+create policy "th_messages_update_own" on public.th_messages for update to authenticated
+  using (public.th_is_member() and user_id = auth.uid() and created_at > now() - interval '10 minutes')
+  with check (public.th_is_member() and user_id = auth.uid() and created_at > now() - interval '10 minutes');
+
+create or replace function public.th_restrict_message_updates()
+returns trigger language plpgsql set search_path = public as $$
+begin
+  if new.content is distinct from old.content then
+    if old.user_id <> auth.uid() or now() >= old.created_at + interval '10 minutes'
+      or row(new.id, new.user_id, new.image_url, new.attachment_path, new.attachment_name,
+        new.attachment_type, new.waveform, new.channel_id, new.mentions, new.reply_to_id,
+        new.pinned, new.created_at)
+        is distinct from
+        row(old.id, old.user_id, old.image_url, old.attachment_path, old.attachment_name,
+        old.attachment_type, old.waveform, old.channel_id, old.mentions, old.reply_to_id,
+        old.pinned, old.created_at) then
+      raise exception 'message content can only be edited by its author within ten minutes';
+    end if;
+    return new;
+  end if;
+
+  if new.pinned is distinct from old.pinned and public.th_is_owner()
+    and row(new.id, new.user_id, new.content, new.image_url, new.attachment_path,
+      new.attachment_name, new.attachment_type, new.waveform, new.channel_id,
+      new.mentions, new.reply_to_id, new.created_at)
+      is not distinct from
+      row(old.id, old.user_id, old.content, old.image_url, old.attachment_path,
+      old.attachment_name, old.attachment_type, old.waveform, old.channel_id,
+      old.mentions, old.reply_to_id, old.created_at) then
+    return new;
+  end if;
+
+  if new is distinct from old then
+    raise exception 'message updates are restricted';
+  end if;
+  return new;
+end $$;
+drop trigger if exists th_messages_restrict_updates on public.th_messages;
+create trigger th_messages_restrict_updates
+  before update on public.th_messages
+  for each row execute function public.th_restrict_message_updates();
 
 create or replace function public.th_toggle_message_pin(p_message_id bigint)
 returns boolean language plpgsql security definer set search_path = public as $$
@@ -183,6 +287,21 @@ begin
 end $$;
 revoke all on function public.th_toggle_message_pin(bigint) from public, anon;
 grant execute on function public.th_toggle_message_pin(bigint) to authenticated;
+
+create table if not exists public.th_message_reads (
+  message_id bigint not null references public.th_messages(id) on delete cascade,
+  user_id uuid not null default auth.uid() references public.th_profiles(id) on delete cascade,
+  read_at timestamptz not null default now(),
+  primary key (message_id, user_id)
+);
+alter table public.th_message_reads enable row level security;
+drop policy if exists "th_message_reads_select" on public.th_message_reads;
+create policy "th_message_reads_select" on public.th_message_reads for select to authenticated
+  using (public.th_is_member());
+drop policy if exists "th_message_reads_insert" on public.th_message_reads;
+create policy "th_message_reads_insert" on public.th_message_reads for insert to authenticated
+  with check (public.th_is_member() and user_id = auth.uid());
+grant select, insert on public.th_message_reads to authenticated;
 
 create table if not exists public.th_message_reactions (
   message_id bigint not null references public.th_messages(id) on delete cascade,
@@ -230,12 +349,12 @@ create policy "th_tasks_select" on public.th_tasks for select to authenticated
 drop policy if exists "th_tasks_insert" on public.th_tasks;
 create policy "th_tasks_insert" on public.th_tasks for insert to authenticated
   with check (public.th_is_member() and author_id = auth.uid() and pinned = false and (
-    assigned_to is null or exists (select 1 from public.th_profiles p where p.id = assigned_to and (p.approved or p.is_owner))
+    assigned_to is null or exists (select 1 from public.th_profiles p where p.id = assigned_to and ((p.is_approved and not p.is_rejected) or p.is_owner))
   ));
 drop policy if exists "th_tasks_update" on public.th_tasks;
 create policy "th_tasks_update" on public.th_tasks for update to authenticated
   using (public.th_is_member() and (author_id = auth.uid() or public.th_is_owner())) with check (public.th_is_member() and (author_id = auth.uid() or public.th_is_owner()) and (
-    assigned_to is null or exists (select 1 from public.th_profiles p where p.id = assigned_to and (p.approved or p.is_owner))
+    assigned_to is null or exists (select 1 from public.th_profiles p where p.id = assigned_to and ((p.is_approved and not p.is_rejected) or p.is_owner))
   ));
 drop policy if exists "th_tasks_delete" on public.th_tasks;
 create policy "th_tasks_delete" on public.th_tasks for delete to authenticated
@@ -408,7 +527,7 @@ begin
 
   foreach mentioned_user in array coalesce(new.mentions, '{}'::uuid[]) loop
     if mentioned_user <> actor and exists (
-      select 1 from public.th_profiles where id = mentioned_user and (approved or is_owner)
+      select 1 from public.th_profiles where id = mentioned_user and ((is_approved and not is_rejected) or is_owner)
     ) then
       insert into public.th_notifications (user_id, actor_id, kind, body, task_id, message_id, channel_id)
       values (mentioned_user, actor, notification_kind, notification_body, task_ref, message_ref, channel_ref);
@@ -428,6 +547,7 @@ do $$ begin alter publication supabase_realtime add table public.th_notification
 -- 4) الوقت الحقيقي
 do $$ begin alter publication supabase_realtime add table public.th_messages;     exception when duplicate_object then null; end $$;
 do $$ begin alter publication supabase_realtime add table public.th_channels;     exception when duplicate_object then null; end $$;
+do $$ begin alter publication supabase_realtime add table public.th_message_reads; exception when duplicate_object then null; end $$;
 do $$ begin alter publication supabase_realtime add table public.th_message_reactions; exception when duplicate_object then null; end $$;
 do $$ begin alter publication supabase_realtime add table public.th_tasks;        exception when duplicate_object then null; end $$;
 do $$ begin alter publication supabase_realtime add table public.th_task_replies; exception when duplicate_object then null; end $$;
