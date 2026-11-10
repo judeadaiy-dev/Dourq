@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: light; }
+html, body { background: #f8f6f1; }
+body { font-family: 'IBM Plex Sans Arabic', sans-serif; color: #352f28; -webkit-font-smoothing: antialiased; }
+.display { font-family: Cairo, sans-serif; }
+.glass { background: rgba(255,255,255,.88); border: 1px solid rgba(91,70,49,.12); backdrop-filter: blur(18px); }
+.grid-bg { background-color: #f8f6f1; background-image: linear-gradient(rgba(151,91,59,.045) 1px, transparent 1px), linear-gradient(90deg, rgba(151,91,59,.045) 1px, transparent 1px); background-size: 54px 54px; }
+.coral-glow { box-shadow: 0 12px 44px rgba(91,70,49,.1); }
+.rise { transition: transform .35s ease, box-shadow .35s ease, border-color .35s ease; }
+.rise:hover { transform: translateY(-3px); box-shadow: 0 20px 48px rgba(91,70,49,.12); border-color: rgba(151,91,59,.3); }
+.scroll-thin { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.2) transparent; }
+::selection { background: #975b3b; color: #fff; }
+button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 2px solid rgba(151,91,59,.55); outline-offset: 2px; }
+
+.text-white { color: #352f28; }
+.text-slate-100 { color: #40382f; }
+.text-slate-200 { color: #51483d; }
+.text-slate-300 { color: #62584c; }
+.text-slate-400 { color: #756a5e; }
+.text-slate-500 { color: #82786c; }
+.text-amber-100 { color: #75513a; }
+.text-emerald-200 { color: #286347; }
+.text-emerald-300 { color: #286347; }
+.text-red-300 { color: #9c3939; }
+.text-red-200 { color: #873636; }
+.bg-coral.text-white, .bg-gradient-to-br.text-white { color: #fff; }
+.border-white\/10 { border-color: rgba(91,70,49,.14); }
+.border-white\/15 { border-color: rgba(91,70,49,.2); }
+.bg-white\/5 { background-color: rgba(91,70,49,.045); }
+.bg-white\/10 { background-color: rgba(91,70,49,.075); }
+.bg-white\/15 { background-color: rgba(91,70,49,.1); }
+.hover\:bg-white\/5:hover { background-color: rgba(91,70,49,.08); }
